@@ -6,14 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 public class InventoryRequest {
-    
     @NotBlank(message = "El SKU no puede estar vacío")
     private String sku;
-    
+
     @Min(value = 0, message = "La cantidad no puede ser negativa")
     private Integer quantity;
 }
