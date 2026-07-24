@@ -9,7 +9,7 @@
 		<version>4.0.1</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.devtalles.ecommerce</groupId>
+	<groupId>com.ecommerce</groupId>
 	<artifactId>inventory-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>inventory-service</name>
