@@ -1,10 +1,12 @@
 spring:
-  application:
-    name: config-server
   cloud:
     config:
       server:
         git:
-          uri: /home/lposca/repos/microservices/config-server
-					
-            
+          uri: https://github.com/lposca/microservice-config-data
+          username: lposca
+          password: ${GIT}
+          clone-on-start: true
+          default-label: main
+server:
+  port: 8888 
