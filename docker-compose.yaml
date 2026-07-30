@@ -35,20 +35,39 @@ services:
     volumes:
         - order_data:/var/lib/postgresql/data
 
+  keyclock-db:
+    image: postgres:16-alpine
+    container_name: keyclock-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: keyclock
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: keyclock-db
+    volumes:
+      - keyclock_data:/var/lib/postgresql/data   
+
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    container_name: keycloakimg
+    command: start-dev # Modo desarrollo (rápido y sin HTTPS obligatorio)
+    environment:
+        KC_DB: postgres
+        KC_DB_URL: jdbc:postgresql://keyclock-db:5432/keyclock-db
+        KC_DB_USERNAME: keyclock
+        KC_DB_PASSWORD: password
+        # Credenciales del Super Admin (Para entrar a la consola ya mismo)
+        KC_HOSTNAME_URL: http://localhost:8080
+        KC_HOSTNAME_BACKCHANNEL_DYNAMIC: true
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - keyclock-db
 volumes:
   mongo_data:           # Declaramos el volumen persistente
   inventory_data:
   order_data:
-
-#  # 2. Nuestra Aplicación (Product Service)
-#  product-service:
-#    build: .              # Usa el Dockerfile de la carpeta actual
-#    container_name: product-service
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      # Sobrescribimos la config de Spring para usar Docker
-#      # Fíjate: usamos 'mongodb' en lugar de 'localhost'
-#      - SPRING_DATA_MONGODB_URI=mongodb://root:password@mongodb:27017/product-db?authSource=admin
-#    depends_on:
-#      - mongodb           # Espera a que la BD arranque primero
+  keyclock_data:
