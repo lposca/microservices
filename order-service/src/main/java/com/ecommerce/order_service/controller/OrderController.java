@@ -6,9 +6,12 @@ import com.ecommerce.order_service.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/order")
@@ -18,15 +21,37 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderResponse placeOrder(@Valid @RequestBody OrderRequest orderRequest){
-        return orderService.placeOrder(orderRequest);
+    public OrderResponse placeOrder(@Valid @RequestBody OrderRequest orderRequest,
+    		@AuthenticationPrincipal Jwt jwt){
+        return orderService.placeOrder(orderRequest, jwt.getSubject());
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<OrderResponse> getAllOrders(){
-        return orderService.getAllOrders();
+    public List<OrderResponse> getAllOrders(@AuthenticationPrincipal Jwt jwt){
+    	
+    	
+    	Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+    	
+    	boolean isAdmin = false;
+    	
+    	if ( realmAccess != null)
+    	{
+    		List<String> roles = (List<String>) realmAccess.get("roles");
+    		
+    		if ( roles != null)
+    		{
+    			 isAdmin = roles.stream().anyMatch(r-> r.equalsIgnoreCase("ADMIN"));
+    		}
+    		
+    		
+    	}
+    	
+    	
+        return orderService.getOrders(jwt.getSubject(), isAdmin);
     }
+    
+    
 
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)

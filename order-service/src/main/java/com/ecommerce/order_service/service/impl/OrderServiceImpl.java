@@ -1,5 +1,6 @@
 package com.ecommerce.order_service.service.impl;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,6 +16,8 @@ import com.ecommerce.order_service.repository.OrderRepository;
 import com.ecommerce.order_service.service.OrderService;
 import com.ecommerce.order_service.service.client.InventoryClient;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,9 +30,18 @@ public class OrderServiceImpl implements OrderService {
 //    private final WebClient.Builder webClientBuilder;
     private final InventoryClient inventoryClient;
 
+    
+    
+    public OrderResponse fallbackMethod(OrderRequest orderRequest, String userId, Throwable ex) {
+    	
+    	 throw new RuntimeException("El servicio no responde, intente luego");
+    }
+    
     @Override
     @Transactional
-    public OrderResponse placeOrder(OrderRequest orderRequest) {
+    @CircuitBreaker(name = "inventory", fallbackMethod = "fallbackMethod")
+    @Retry(name = "inventory")
+    public OrderResponse placeOrder(OrderRequest orderRequest, String userId) {
 
         log.info("Colocando nuevo pedido");
 
@@ -58,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setOrderNumber(UUID.randomUUID().toString());
+        order.setUserId(userId);
 
         Order savedOrder = orderRepository.save(order);
 
@@ -68,11 +81,28 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAll().stream()
-                .map(orderMapper::toOrderResponse)
-                .toList();
+    public List<OrderResponse> getOrders(String userId, boolean isAdmin) {
+    
+    	if ( isAdmin)
+    	{
+    		  return orderRepository.findAll().stream()
+    	                .map(orderMapper::toOrderResponse)
+    	                .toList();
+    	}else
+    	{
+    		return orderRepository.findByUserId(userId).stream().map(orderMapper::toOrderResponse).toList();
+    	}
+    	
+    	
     }
+    
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<OrderResponse> getAllOrders() {
+//        return orderRepository.findAll().stream()
+//                .map(orderMapper::toOrderResponse)
+//                .toList();
+//    }
 
     @Override
     @Transactional(readOnly = true)
